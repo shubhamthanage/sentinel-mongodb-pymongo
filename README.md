@@ -126,10 +126,10 @@ Query used: all transactions of one customer.
 `explain()` shows the plan changing from `COLLSCAN` (reads every document) to `FETCH -> IXSCAN`
 (jumps straight to that customer's documents). Example from my test run on 20,001 documents:
 
-| | Stage | Docs examined | Returned |
-|---|---|---|---|
-| Before | COLLSCAN | 20,001 | 95 |
-| After | FETCH -> IXSCAN | 95 | 95 |
+| | Stage | Docs examined | Keys examined | Returned | Time |
+|---|---|---|---|---|---|
+| Before | COLLSCAN | 20,001 | 0 | 95 | 12 ms |
+| After | FETCH -> IXSCAN | 95 | 95 | 95 | 1 ms |
 
 ### Aggregations (`05_aggregations.py`)
 1. **Fraud rate per `merchant_category`** - `$group` on `merchant.category`, `$sum` for fraud count, `$avg` of the 0/1 `fraud_label` as the rate, then `$sort`.
@@ -138,12 +138,34 @@ Query used: all transactions of one customer.
    `$group` sums the amount, `$sort` + `$limit 10`. Needs MongoDB 5.0 or newer (Atlas M0 is 7.x or 8.x).
 
 ## Screenshots of output
-Add your own screenshots to the `screenshots/` folder after running, and keep these names:
+Real output from my runs against Atlas (MongoDB 8.0.37).
+
+### 1. Connect (`01_connect.py`)
+Ping returns `{'ok': 1}`, server version 8.0.37, using the `sentinel` database.
 
 ![connect](screenshots/01_connect.png)
+
+### 2. Ingest (`02_ingest.py`)
+443 whole customers sampled, giving 20,001 transactions, 109 of them fraud.
+
 ![ingest](screenshots/02_ingest.png)
+
+### 3. CRUD (`03_crud.py`)
+`insert_one`, `insert_many` (3 docs), `find` with a filter and projection (top fraud transactions over 10,000, mostly `gaming`),
+`update_many` matched all 109 fraud transactions, `delete_one` deleted 1, then the demo documents are cleaned up.
+(`modified 0` is expected on a re-run: the fraud rows were already flagged by an earlier run.)
+
 ![crud](screenshots/03_crud.png)
+
+### 4. Indexes and explain() (`04_indexes_explain.py`)
+`COLLSCAN` over 20,001 docs (12 ms) becomes `FETCH -> IXSCAN` over 95 docs (1 ms).
+
 ![explain](screenshots/04_explain.png)
+
+### 5. Aggregations (`05_aggregations.py`)
+Fraud is concentrated in `gaming` (2.53%), `gift_cards` (2.51%) and `electronics` (1.13%); every other category has 0 fraud in this sample.
+The top customer spent 176,958.30 across 9 transactions in their last 24 hours.
+
 ![aggregations](screenshots/05_aggregations.png)
 
 ## Notes
