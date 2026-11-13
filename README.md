@@ -42,7 +42,9 @@ cp .env.example .env
 Open `.env` and set `MONGODB_URI` (your connection string with your own user and password;
 if the password has special characters like `@`, URL-encode them, e.g. `%40`) and
 `DATA_DIR` (path to the kit's `data/tables` folder).
+`MONGODB_DB` and `TARGET_TXNS` are optional (defaults: `sentinel`, `20000`).
 `.env` is in `.gitignore`, so keys and passwords are never committed.
+Use the `.env.example` in the repo root. The one inside `supabase_db_kit/` is the instructor kit's own Supabase template and is not used here.
 
 ### 4. Data
 The data is the SENTINEL **supabase_db_kit** from the instructor (110,000 transactions, 2,500 customers,
